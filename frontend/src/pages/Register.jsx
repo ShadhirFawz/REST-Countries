@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 
 export default function Register() {
   const { register } = useAuth();
@@ -9,7 +10,20 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -33,18 +47,26 @@ export default function Register() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-start bg-gradient-to-br from-gray-900 via-black to-gray-800 p-12">
+    <div className="relative flex min-h-screen items-center justify-center md:justify-start bg-gradient-to-br from-gray-900 via-black to-gray-800 p-4 sm:p-5">
+      <motion.div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: `radial-gradient(800px at ${mousePosition.x}px ${mousePosition.y}px, rgba(29, 78, 216, 0.2), transparent 98%)`,
+        }}
+        transition={{ type: 'spring', damping: 30 }}
+      />
+      
       {/* Background effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-transparent to-transparent opacity-50"></div>
       
-      {/* Form Container */}
-      <div className="relative z-10 w-full max-w-md left-20 transform translate-y-[-2%]">
+      {/* Form Container - Responsive adjustments */}
+      <div className="relative z-10 w-full max-w-md md:left-20 md:mt-7 md:transform md:translate-y-[-2%]">
         {/* Header */}
-        <div className="mb-7 text-center">
-          <h2 className="text-4xl font-bold text-gray-100 font-serif">
+        <div className="mb-6 sm:mb-7 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-100 font-serif">
             Create Account
           </h2>
-          <p className="mt-3 text-gray-400 flex items-center justify-center">
+          <p className="mt-2 sm:mt-3 text-gray-400 flex items-center justify-center">
             Join with us today to{' '}
             <Link 
               to="/" 
@@ -56,7 +78,7 @@ export default function Register() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-gray-800 bg-opacity-60 backdrop-blur-sm rounded-xl shadow-xl pb-12 pt-2 pl-7 pr-7 border border-gray-700">
+        <div className="bg-gray-800 bg-opacity-60 backdrop-blur-sm rounded-xl shadow-xl pb-6 sm:pb-7 pt-2 px-5 sm:px-7 border border-gray-700">
           {error && (
             <div className="mb-0 p-3 bg-red-900 bg-opacity-30 border border-red-700 rounded-lg">
               <div className="flex items-center text-red-300">
@@ -67,15 +89,15 @@ export default function Register() {
               </div>
             </div>
           )}
-          <div className="mt-7 mb-5 border-gray-700">
-            <h2 className="text-2xl font-medium text-gray-300 font-sans text-center">
+          <div className="mt-5 sm:mt-7 mb-4 sm:mb-5 border-gray-700">
+            <h2 className="text-xl sm:text-2xl font-medium text-gray-300 font-sans text-center">
               REGISTER
             </h2>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2" style={{ fontFamily: "sans-serif" }}>
                 Username
               </label>
               <input
@@ -85,13 +107,13 @@ export default function Register() {
                 required
                 value={form.username}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 hover:placeholder-gray-300 focus:placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your username"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2" style={{ fontFamily: "sans-serif" }}>
                 Email Address
               </label>
               <input
@@ -101,13 +123,13 @@ export default function Register() {
                 required
                 value={form.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 hover:placeholder-gray-300 focus:placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2" style={{ fontFamily: "sans-serif" }}>
                 Password
               </label>
               <div className="relative">
@@ -118,7 +140,7 @@ export default function Register() {
                   required
                   value={form.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 hover:placeholder-gray-300 focus:placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                   placeholder="••••••••••••••••"
                 />
                 <button
@@ -138,7 +160,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 px-4 bg-indigo-800 hover:bg-blue-900 cursor-pointer text-white font-serif rounded-lg transition-colors duration-300 flex justify-center items-center ${
+              className={`w-full py-2 sm:py-3 px-4 bg-indigo-800 hover:bg-blue-900 cursor-pointer text-white font-serif rounded-lg transition-colors duration-300 flex justify-center items-center ${
                 isLoading ? 'opacity-80' : ''
               }`}
             >
@@ -156,10 +178,10 @@ export default function Register() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-gray-700">
+          <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-700">
             <p className="text-center text-sm text-gray-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
+              <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium font-serif transition-colors">
                 Sign in
               </Link>
             </p>

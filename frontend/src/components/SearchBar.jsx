@@ -15,10 +15,20 @@ export default function SearchBar({ onSearch, isLoading }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    handleResize(); // Set initial value
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (searchQuery === '' && activeFilter) {
-      // If search is cleared but filter is still active, trigger reset
       onSearch('', activeFilter);
     }
   }, [searchQuery, activeFilter, onSearch]);
@@ -26,14 +36,12 @@ export default function SearchBar({ onSearch, isLoading }) {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Default to 'name' if no filter selected
       const filterType = activeFilter || 'name';
       onSearch(searchQuery, filterType);
     }
   };
 
   const handleFilterSelect = (filterValue) => {
-    // Toggle filter - if clicking the same filter, deselect it
     setActiveFilter(activeFilter === filterValue ? null : filterValue);
     setShowFilters(false);
   };
@@ -42,15 +50,14 @@ export default function SearchBar({ onSearch, isLoading }) {
     const value = e.target.value;
     setSearchQuery(value);
     
-    // If input is cleared and we were in search mode, reset
     if (value === '' && searchQuery !== '') {
-      onSearch('', activeFilter || 'name'); // Trigger reset
+      onSearch('', activeFilter || 'name');
     }
   };
 
   return (
-    <div className="relative mb-8 max-w-3xl mx-auto">
-      <form onSubmit={handleSearch} className="flex gap-3 w-full">
+    <div className={`relative ${isMobile ? 'mb-4 px-2' : 'mb-8 max-w-3xl mx-auto'}`}>
+      <form onSubmit={handleSearch} className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-3'} w-full`}>
         {/* Search input container */}
         <div className="relative flex-1 group">
           {/* Search icon */}
@@ -65,13 +72,13 @@ export default function SearchBar({ onSearch, isLoading }) {
             type="text"
             value={searchQuery}
             onChange={handleInputChange}
-            style={{ fontFamily: 'sans-serif' }} // Adjust padding for icon
+            style={{ fontFamily: 'sans-serif' }}
             placeholder={
               activeFilter 
                 ? `Search by ${filterOptions.find(f => f.value === activeFilter)?.label || 'Name'}...`
                 : "Search by country name..."
             }
-            className="w-full pl-12 pr-12 py-3 bg-gray-800/80 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 text-white placeholder-gray-400/70 transition-all backdrop-blur-sm shadow-lg"
+            className={`w-full pl-12 pr-12 py-3 bg-gray-800/80 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/30 text-white placeholder-gray-400/70 transition-all ${isMobile ? 'backdrop-blur-none' : 'backdrop-blur-sm'} shadow-lg`}
           />
           
           {/* Filter toggle button */}
@@ -91,12 +98,12 @@ export default function SearchBar({ onSearch, isLoading }) {
           </button>
         </div>
         
-        {/* Search button */}
+        {/* Search button - Mobile shows below input */}
         <button
           type="submit"
           disabled={isLoading || !searchQuery.trim()}
           style={{ fontFamily: 'sans-serif' }}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl text-white disabled:opacity-50 disabled:from-gray-600 disabled:to-gray-600 font-medium transition-all duration-200 flex items-center justify-center min-w-[120px] shadow-lg hover:shadow-blue-500/20"
+          className={`${isMobile ? 'w-full' : 'px-6'} py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl text-white disabled:opacity-50 disabled:from-gray-600 disabled:to-gray-600 font-medium transition-all duration-200 flex items-center justify-center ${isMobile ? '' : 'min-w-[120px]'} shadow-lg hover:shadow-blue-500/20`}
         >
           {isLoading ? (
             <>
@@ -120,11 +127,11 @@ export default function SearchBar({ onSearch, isLoading }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute z-10 mt-3 w-full bg-gray-800/95 border border-gray-700 rounded-xl shadow-xl overflow-hidden backdrop-blur-lg"
+            className={`absolute z-10 mt-3 w-full bg-gray-800/95 border border-gray-700 rounded-xl shadow-xl overflow-hidden ${isMobile ? 'backdrop-blur-none' : 'backdrop-blur-lg'}`}
           >
             <div className="p-2">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400/80 mb-2 px-3 py-1.5">Filter by:</h3>
-              <div className="space-y-1">
+              <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-1'}`}>
                 {filterOptions.map((option) => (
                   <div 
                     key={option.value}
@@ -180,7 +187,7 @@ export default function SearchBar({ onSearch, isLoading }) {
         <motion.div 
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center"
+          className={`mt-3 flex items-center ${isMobile ? 'justify-center' : ''}`}
         >
           <span className="text-xs text-gray-400/80 mr-2">Filtering by:</span>
           <div className="inline-flex items-center bg-gray-700/50 px-3 py-1.5 rounded-full border border-gray-600/50 backdrop-blur-sm">

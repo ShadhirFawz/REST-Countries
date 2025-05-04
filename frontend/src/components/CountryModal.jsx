@@ -31,11 +31,21 @@ export default function CountryModal({ country, onClose }) {
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [showScreenshotButton, setShowScreenshotButton] = useState(false);
   const [isTakingScreenshot, setIsTakingScreenshot] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   // Extract data
   const currency = country.currencies ? Object.entries(country.currencies)[0] : null;
@@ -45,7 +55,6 @@ export default function CountryModal({ country, onClose }) {
   const area = country.area ? `${country.area.toLocaleString()} km²` : 'N/A';
   const coordinates = country.latlng ? country.latlng.map(coord => coord.toFixed(2)).join(', ') : 'N/A';
   const timezones = country.timezones ? country.timezones.join(', ') : 'N/A';
-  const borders = country.borders && country.borders.length ? country.borders.join(', ') : 'None';
   const drivingSide = country.car?.side ? `${country.car.side} (${country.car.signs?.join(', ') || ''})` : 'N/A';
 
   useEffect(() => {
@@ -60,7 +69,7 @@ export default function CountryModal({ country, onClose }) {
   
     setFavoriteLoading(true);
     const wasFavorite = isFavorite;
-    setIsFavorite(!wasFavorite); // Optimistic update
+    setIsFavorite(!wasFavorite);
   
     try {
       if (wasFavorite) {
@@ -74,9 +83,9 @@ export default function CountryModal({ country, onClose }) {
         });
         showToast('Added to favorites', 'success');
       }
-      await loadFavorites(); // Final sync with server
+      await loadFavorites();
     } catch (err) {
-      setIsFavorite(wasFavorite); // Revert if error
+      setIsFavorite(wasFavorite);
       showToast(err.response?.data?.message || 'Error updating favorites', 'error');
     } finally {
       setFavoriteLoading(false);
@@ -98,46 +107,38 @@ export default function CountryModal({ country, onClose }) {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
   };
-  
 
   const handleTakeScreenshot = async () => {
     if (!cardRef.current || isTakingScreenshot) return;
     
     setIsTakingScreenshot(true);
-    setShowScreenshotButton(false);
-  
+    
     try {
-      // First try html-to-image which is more reliable
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
-        pixelRatio: 2,
+        pixelRatio: isMobile ? 1 : 2,
         cacheBust: true,
       });
   
-      // Create download link
       const link = document.createElement('a');
       link.download = `${country.name?.common || 'country'}-card.png`;
       link.href = dataUrl;
-      
-      // Required for Firefox
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
   
-      // Revoke the object URL after download
       setTimeout(() => {
         URL.revokeObjectURL(dataUrl);
       }, 100);
   
-      showToast('Image downloaded successfully!');
+      showToast('Image downloaded!');
     } catch (error) {
       console.error('Error taking screenshot:', error);
       showToast('Failed to download image', 'error');
       
-      // Fallback to html2canvas if html-to-image fails
       try {
         const canvas = await html2canvas(cardRef.current, {
-          scale: 2,
+          scale: isMobile ? 1 : 2,
           logging: false,
           useCORS: true,
           allowTaint: true,
@@ -158,16 +159,13 @@ export default function CountryModal({ country, onClose }) {
     }
   };
 
-  // Hide scrollbar but keep functionality
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.style.scrollbarWidth = 'none';
       contentRef.current.style.msOverflowStyle = 'none';
     }
-    // Disable scrolling on mount
     document.body.style.overflow = 'hidden';
     
-    // Re-enable scrolling on unmount
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -180,13 +178,13 @@ export default function CountryModal({ country, onClose }) {
       transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50"
     >
-      
-      {/* Close Button - Now outside the card container */}
+      {/* Close Button */}
       <AnimatedCloseButton onClick={handleClose} />
 
+      {/* Favorite Button */}
       <motion.button
-        className="absolute top-35 right-116 z-50 p-2 rounded-full bg-gray-900/80 hover:bg-pink-500/80 transition-colors cursor-pointer"
-        whileHover={{ scale: 1.1 }}
+        className={`absolute ${isMobile ? 'top-4 right-16' : 'top-35 right-116'} z-50 p-2 rounded-full bg-gray-900/80 hover:bg-pink-500/80 transition-colors cursor-pointer`}
+        whileHover={{ scale: isMobile ? 1 : 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={toggleFavorite}
         disabled={favoriteLoading}
@@ -201,21 +199,21 @@ export default function CountryModal({ country, onClose }) {
         )}
       </motion.button>
 
-      {/* Screenshot Button - Appears below share button on hover */}
+      {/* Screenshot Button */}
       <motion.button
-        className="absolute top-20 right-116 z-50 p-2 rounded-full bg-gray-900/80 hover:bg-blue-500 transition-colors cursor-pointer"
-        whileHover={{ scale: 1.1 }}
+        className={`absolute ${isMobile ? 'top-4 right-4' : 'top-20 right-116'} z-50 p-2 rounded-full bg-gray-900/80 hover:bg-blue-500 transition-colors cursor-pointer`}
+        whileHover={{ scale: isMobile ? 1 : 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={handleTakeScreenshot} // Directly call download function
+        onClick={handleTakeScreenshot}
         aria-label="Download country card"
       >
         <FaCamera className="h-5 w-5 text-gray-300" />
       </motion.button>
 
-      {/* Loading indicator when processing */}
+      {/* Loading indicator */}
       {isTakingScreenshot && (
         <motion.div
-          className="absolute top-16 left-5 z-50 p-2 bg-gray-900/80 rounded-full"
+          className={`absolute ${isMobile ? 'top-4 left-4' : 'top-16 left-5'} z-50 p-2 bg-gray-900/80 rounded-full`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -228,16 +226,16 @@ export default function CountryModal({ country, onClose }) {
         ref={cardRef}
         initial={{ scale: 0.95 }}
         animate={{ scale: isOpen ? 1 : 0.95 }}
-        className="relative w-full max-w-md bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border-2 border-gray-700/50 shadow-2xl overflow-hidden z-10"
+        className={`relative w-full ${isMobile ? 'max-w-xs' : 'max-w-md'} bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border-2 border-gray-700/50 shadow-2xl overflow-hidden z-10`}
       >
         {/* Header Strip */}
         <div className="h-3 bg-gradient-to-r from-blue-500 to-blue-600"></div>
 
         {/* ID Card Body */}
-        <div className="p-6">
+        <div className={`p-4 ${isMobile ? '' : 'p-6'}`}>
           {/* Flag & Title */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-12 overflow-hidden rounded-md border-2 border-gray-600/50 shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`${isMobile ? 'w-12 h-9' : 'w-16 h-12'} overflow-hidden rounded-md border-2 border-gray-600/50 shadow`}>
               <img 
                 src={country.flags?.png} 
                 alt={`${country.name?.common} flag`} 
@@ -245,74 +243,82 @@ export default function CountryModal({ country, onClose }) {
               />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">{country.name?.common}</h2>
-              <p className="text-sm text-gray-300">{country.name?.official}</p>
+              <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white`}>{country.name?.common}</h2>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-300`}>{country.name?.official}</p>
             </div>
           </div>
 
           {/* ID Card Grid */}
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             {/* Row 1: Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <InfoField 
                 icon={<FaGlobe className="text-blue-400" />}
                 label="Region" 
                 value={`${country.region}${country.subregion ? ` (${country.subregion})` : ''}`}
+                isMobile={isMobile}
               />
               <InfoField 
                 icon={<FaCity className="text-blue-400" />}
                 label="Capital" 
                 value={country.capital?.[0] || 'N/A'}
+                isMobile={isMobile}
               />
             </div>
 
             {/* Row 2: Demographics */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <InfoField 
                 icon={<FaUsers className="text-blue-400" />}
                 label="Population" 
                 value={population}
+                isMobile={isMobile}
               />
               <InfoField 
                 icon={<FaRulerCombined className="text-blue-400" />}
                 label="Area" 
                 value={area}
+                isMobile={isMobile}
               />
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-gray-700/50 my-2"></div>
+            <div className="h-px bg-gray-700/50 my-1"></div>
 
             {/* Row 3: Cultural Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <InfoField 
                 icon={<FaMoneyBillWave className="text-blue-400" />}
                 label="Currency" 
                 value={currencyLabel}
+                isMobile={isMobile}
               />
               <InfoField 
                 icon={<FaLanguage className="text-blue-400" />}
                 label="Languages" 
                 value={languages}
+                isMobile={isMobile}
               />
             </div>
 
             {/* Row 4: Technical Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <InfoField 
                 icon={<FaClock className="text-blue-400" />}
                 label="Timezones" 
                 value={timezones}
+                isMobile={isMobile}
               />
               <InfoField 
                 icon={<FaCarSide className="text-blue-400" />}
                 label="Driving Side" 
                 value={drivingSide}
+                isMobile={isMobile}
               />
             </div>
 
             {/* Divider */}
-            <div className="h-px bg-gray-700/50 my-2"></div>
+            <div className="h-px bg-gray-700/50 my-1"></div>
 
             {/* Row 5: Geographical Info */}
             <InfoField 
@@ -321,57 +327,64 @@ export default function CountryModal({ country, onClose }) {
               value={coordinates}
               copyable
               onCopy={() => copyToClipboard(coordinates)}
+              isMobile={isMobile}
             />
 
             {/* Row 6: International Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <InfoField 
                 icon={<FaLandmark className="text-blue-400" />}
                 label="UN Member" 
                 value={country.unMember ? 'Yes' : 'No'}
+                isMobile={isMobile}
               />
               <InfoField 
                 icon={<FaFlag className="text-blue-400" />}
                 label="Country Codes" 
                 value={`${country.cca2}/${country.cca3}`}
+                isMobile={isMobile}
               />
             </div>
 
             {/* Row 7: Miscellaneous */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <InfoField 
                 icon={<FaFutbol className="text-blue-400" />}
                 label="FIFA Code" 
                 value={country.fifa || 'N/A'}
+                isMobile={isMobile}
               />
               <InfoField 
                 icon={<FaCalendarWeek className="text-blue-400" />}
                 label="Week Starts" 
                 value={country.startOfWeek || 'N/A'}
+                isMobile={isMobile}
               />
             </div>
           </div>
 
           {/* Footer with Map Links */}
-          <div className="mt-6 pt-4 border-t border-gray-700/50 flex justify-center gap-3">
+          <div className="mt-4 pt-3 border-t border-gray-700/50 flex justify-center gap-2">
             <MapLink 
               href={country.maps?.googleMaps} 
               text="Google Maps"
+              isMobile={isMobile}
             />
             <MapLink 
               href={country.maps?.openStreetMaps} 
               text="OpenStreetMap"
+              isMobile={isMobile}
             />
           </div>
         </div>
       </motion.div>
 
-      {/* Notification */}
+      {/* Notifications */}
       {isCopied && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg"
+          className={`fixed ${isMobile ? 'bottom-4 right-4' : 'bottom-6 right-6'} bg-green-600 text-white px-3 py-2 rounded-md shadow-lg text-sm`}
         >
           Copied to clipboard!
         </motion.div>
@@ -381,7 +394,7 @@ export default function CountryModal({ country, onClose }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className={`fixed bottom-6 right-6 px-4 py-2 rounded-md shadow-lg z-50 ${
+          className={`fixed ${isMobile ? 'bottom-4 right-4' : 'bottom-6 right-6'} px-3 py-2 rounded-md shadow-lg z-50 text-sm ${
             toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
           } text-white`}
         >
@@ -389,22 +402,21 @@ export default function CountryModal({ country, onClose }) {
         </motion.div>
       )}
     </motion.div>
-    
   );
 }
 
-// Reusable Info Field Component
-const InfoField = ({ icon, label, value, copyable = false, onCopy = () => {} }) => (
-  <div className="flex items-start gap-3 group">
-    <div className="mt-1">{icon}</div>
+// Updated InfoField component with mobile support
+const InfoField = ({ icon, label, value, copyable = false, onCopy = () => {}, isMobile }) => (
+  <div className="flex items-start gap-2 group">
+    <div className={`${isMobile ? 'mt-0.5' : 'mt-1'}`}>{icon}</div>
     <div className="flex-1">
-      <p className="text-xs font-medium text-gray-400">{label}</p>
-      <div className="flex items-center gap-2">
-        <p className="text-sm text-gray-200">{value}</p>
+      <p className={`${isMobile ? 'text-2xs' : 'text-xs'} font-medium text-gray-400`}>{label}</p>
+      <div className="flex items-center gap-1">
+        <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-200 line-clamp-1`}>{value}</p>
         {copyable && (
           <button 
             onClick={onCopy}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-blue-400"
+            className={`${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity text-gray-400 hover:text-blue-400`}
             title="Copy"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,15 +429,15 @@ const InfoField = ({ icon, label, value, copyable = false, onCopy = () => {} }) 
   </div>
 );
 
-// Reusable Map Link Component
-const MapLink = ({ href, text }) => (
+// Updated MapLink component with mobile support
+const MapLink = ({ href, text, isMobile }) => (
   <a 
     href={href} 
     target="_blank" 
     rel="noopener noreferrer"
-    className="px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs rounded-md flex items-center gap-2 transition-colors"
+    className={`${isMobile ? 'px-2 py-1.5 text-2xs' : 'px-3 py-2 text-xs'} bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-md flex items-center gap-1 transition-colors`}
   >
-    <FaMapMarkerAlt className="text-xs" />
+    <FaMapMarkerAlt className={`${isMobile ? 'text-2xs' : 'text-xs'}`} />
     {text}
   </a>
 );
