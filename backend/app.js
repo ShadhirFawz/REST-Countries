@@ -12,10 +12,12 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: 'https://rest-countries-pearl-five.vercel.app/',
+  origin: 'https://rest-countries-pearl-five.vercel.app',
   credentials: true
 }));
 app.use(express.json());
+
+app.options('*', cors()); 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
