@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaGlobe, FaCity, FaMoneyBillWave} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
 export default function CountryCard({ country, onClick }) {
@@ -96,7 +96,9 @@ export default function CountryCard({ country, onClick }) {
       {/* Details Section */}
       <div className="relative z-10 space-y-3 flex-grow">
         <div className="flex items-baseline">
-          <span className="text-xs font-medium text-gray-300/90 w-24 tracking-wider font-mono">REGION</span>
+          <span className="text-xs font-medium text-gray-300/90 w-24 tracking-wider font-mono flex items-center">
+            <FaGlobe className="mr-2" /> REGION
+          </span>
           <span className="text-gray-200 font-stretch-20% font-sans line-clamp-1" style={{ fontFamily: 'san-serif', fontSize: isMobile ? '1.2rem' : '1.5rem' }}>
             {region}
           </span>
@@ -105,7 +107,9 @@ export default function CountryCard({ country, onClick }) {
         <div className="h-[0.5px] bg-gray-700/50 w-full"></div>
 
         <div className="flex items-baseline pt-1">
-          <span className="text-xs font-medium text-gray-300/90 w-24 tracking-wider font-mono">CAPITAL</span>
+          <span className="text-xs font-medium text-gray-300/90 w-24 tracking-wider font-mono flex items-center">
+            <FaCity className="mr-2" /> CAPITAL
+          </span>
           <span className="text-gray-200 font-light font-sans line-clamp-1">
             {capital}
           </span>
@@ -114,7 +118,9 @@ export default function CountryCard({ country, onClick }) {
         <div className="h-[0.5px] bg-gray-700/50 w-full"></div>
 
         <div className="flex items-baseline pt-1">
-          <span className="text-xs font-medium text-gray-300/90 w-24 tracking-wider font-mono">CURRENCY</span>
+          <span className="text-xs font-medium text-gray-300/90 w-24 tracking-wider font-mono flex items-center">
+            <FaMoneyBillWave className="mr-2" /> CURRENCY
+          </span>
           <span className="text-gray-200 font-light font-sans">
             {currencyCode}
           </span>

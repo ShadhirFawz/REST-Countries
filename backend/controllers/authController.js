@@ -9,16 +9,17 @@ import jwt from 'jsonwebtoken';
  */
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password -profilePic.data');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json({
-      id: user._id,
-      username: user.username,
-      email: user.email
-    });
+    const userResponse = user.toObject();
+    if (user.profilePic) {
+      userResponse.profileImageUrl = `/api/users/profile-image?t=${Date.now()}`;
+    }
+    
+    res.json(userResponse);
   } catch (error) {
     res.status(500).json({ 
       error: 'Server error',
@@ -98,7 +99,9 @@ export const loginUser = async (req, res) => {
       user: { 
         id: user._id, 
         username: user.username,
-        email: user.email // Include email in response
+        email: user.email, // Include email in response
+        phone: user.phone,
+        profilePic: user.profilePic
       }
     });
   } catch (error) {

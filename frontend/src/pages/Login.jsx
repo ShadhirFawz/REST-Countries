@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import loginImage from '../assets/Login_img.jpg';
 import backgroundImage from '../assets/Login_bg.jpg';
+import FinalLogo from '../assets/FinalLogo.jpg'
+import appLogo from '../assets/AppLogo.jpg'
 import { motion } from 'framer-motion';
 
 export default function Login() {
@@ -50,6 +52,30 @@ export default function Login() {
   return (
     <div className="relative flex min-h-screen items-center justify-center md:justify-start bg-gradient-to-br from-gray-900 via-black to-gray-800 p-4 sm:p-5">
 
+      <div className="lg:hidden absolute top-0 w-full">
+        {/* Background logo - visible on both mobile and desktop */}
+        <div className="w-full flex justify-center">
+          <div className="relative w-full max-w-4xl h-100 opacity-50">
+            <img 
+              src={backgroundImage} 
+              alt="Background Logo" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        
+        {/* Foreground app logo - mobile version */}
+        <div className="lg:hidden absolute top-10 w-full flex justify-center z-50">
+          <div className="w-50 h-30 overflow-hidden border-none">
+            <img 
+              src={FinalLogo}
+              alt="App Logo" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      </div>      
+
       <motion.div
         className="fixed inset-0 pointer-events-none z-0"
         style={{
@@ -65,12 +91,12 @@ export default function Login() {
       <div className="absolute left-0 top-0 h-full w-4/7 ml-0 hidden lg:block">
         <div className="relative h-full w-full">
           <div 
-            className="absolute inset-0 rounded-r-xl overflow-hidden"
+            className="absolute inset-0 opacity-50 overflow-visible"
             style={{
               backgroundImage: `url(${backgroundImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              filter: 'brightness(0.8)',
+              filter: 'brightness(0.8',
               opacity: 0.8,
               width: 'calc(100% + 5rem)'
             }}
@@ -79,15 +105,34 @@ export default function Login() {
       </div>
 
       {/* Image Container - Hidden on mobile */}
-      <div className="relative z-10 w-2/4 mt-0 max-w-2xl ml-10 mr-20 hidden lg:block">
-        <div className="rounded-2xl mt-0 overflow-hidden shadow-2xl border border-transparent opacity-80">
+      
+        <div className="rounded-2xl overflow-x-auto border-none opacity-80 w-2/4 mt-0 max-w-2xl ml-10 mr-20 hidden lg:block">
           <img 
             src={loginImage}
             alt="Login visual" 
-            className="w-full h-full object-cover"
+            className="w-full h-full"
+          />
+        </div>
+      
+
+      <div className="absolute w-2/4 mt-0 mb-40 max-w-md ml-100 z-50 mr-20 hidden lg:block">
+        <div className="rounded-2xl mt-0 z-0 overflow-hidden transform-none pointer-events-none opacity-100">
+          <img 
+            src={appLogo}
+            alt="App Logo visual" 
+            className="w-800 h-full object-cover"
           />
         </div>
       </div>
+
+      <div className="absolute w-2/4 mt-5 mb-26 max-w-md items-center ml-148 mr-20 hidden lg:block">
+        <div className="h-[7px] rounded-full bg-pink-500 w-50 opacity-65 z-150"></div>
+      </div>
+
+      <div className="absolute w-2/4 mt-5 mb-22 max-w-md items-center ml-160 mr-20 hidden lg:block">
+        <div className="h-[7px] rounded-full bg-blue-900 w-50 opacity-65 z-150"></div>
+      </div>
+
       
       {/* Form Container - Responsive adjustments */}
       <div className="relative z-10 w-full max-w-md md:left-20 md:mt-6 md:transform md:translate-y-[-2%]">

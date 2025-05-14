@@ -33,6 +33,24 @@ export const searchCountries = async (query, filterType = 'name') => {
   }
 };
 
+axios.defaults.withCredentials = true;
+
+export const getProfileImage = async () => {
+  try {
+    const response = await axios.get(`/api/users/profile-image`, {
+      responseType: 'blob',
+      withCredentials: true, // Ensure cookies are sent
+    });
+    return URL.createObjectURL(response.data);
+  } catch (err) {
+    console.error('Profile image error:', {
+      status: err.response?.status,
+      message: err.message,
+    });
+    return null;
+  }
+};
+
 // Favorites API
 export const addFavorite = async (countryData) => {
   try {
@@ -60,6 +78,38 @@ export const getFavorites = async () => {
     return response.data;
   } catch (err) {
     console.error('Error fetching favorites:', err);
+    throw err;
+  }
+};
+
+export const getFavoriteCountries = async () => {
+  try {
+    const response = await axios.get('/api/favorites/countries');
+    return response.data;
+  } catch (err) {
+    console.error('Error fetching favorite countries:', err);
+    throw err;
+  }
+};
+
+export const updateUserProfile = async (profileData) => {
+  try {
+    const formData = new FormData();
+    
+    // Append all fields to formData
+    if (profileData.username) formData.append('username', profileData.username);
+    if (profileData.email) formData.append('email', profileData.email);
+    if (profileData.phone) formData.append('phone', profileData.phone);
+    if (profileData.profilePic) formData.append('profilePic', profileData.profilePic);
+    
+    const response = await axios.put('/api/users/profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (err) {
+    console.error('Error updating profile:', err);
     throw err;
   }
 };

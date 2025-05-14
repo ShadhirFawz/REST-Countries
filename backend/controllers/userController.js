@@ -75,10 +75,10 @@ export const getRecentlyViewed = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    const { username, email } = req.body;
-    const userId = req.user.id;
+    const { username, email, phone } = req.body;
+    const userId = req.user._id;
 
-    // Check if new username/email already exists
+    // Check if username or email already exists
     const existingUser = await User.findOne({
       $and: [
         { _id: { $ne: userId } },
@@ -88,25 +88,65 @@ export const updateProfile = async (req, res) => {
 
     if (existingUser) {
       return res.status(400).json({
-        error: existingUser.username === username
-          ? 'Username already in use'
+        error: existingUser.username === username 
+          ? 'Username already in use' 
           : 'Email already in use'
       });
     }
 
+    const updateData = { username, email, phone };
+
+    // Handle profile picture upload if exists
+    if (req.file) {
+      updateData.profilePic = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype
+      };
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { username, email },
+      updateData,
       { new: true, runValidators: true }
-    ).select('-password');
+    ).select('-password -profilePic.data');
 
-    res.json({
-      success: true,
-      user: updatedUser
-    });
+    // Add profile image URL if exists
+    const userResponse = updatedUser.toObject();
+    if (updatedUser.profilePic) {
+      userResponse.profileImageUrl = `/api/users/profile-image?t=${Date.now()}`; // Add timestamp
+    }
+    res.json(userResponse);
+
   } catch (error) {
     res.status(500).json({
       error: 'Profile update failed',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * @desc Get user profile image
+ * @route GET /api/users/profile-image
+ * @access Private
+ */
+export const getProfileImage = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user?.profilePic?.data) {
+      return res.status(404).send('No profile image found');
+    }
+
+    res.set({
+      'Content-Type': user.profilePic.contentType,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    res.send(user.profilePic.data);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get profile image',
       details: error.message
     });
   }

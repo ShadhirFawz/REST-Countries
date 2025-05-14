@@ -11,7 +11,10 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://rest-countries-pearl-five.vercel.app/',
+  credentials: true
+}));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);

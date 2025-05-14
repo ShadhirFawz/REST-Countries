@@ -2,12 +2,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { getAllCountries, searchCountries, getFavorites } from '../services/api';
+import { getAllCountries, searchCountries, getFavoriteCountries } from '../services/api';
 import CountryCard from '../components/CountryCard';
 import CountryModal from '../components/CountryModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ProfileDrawer from '../components/ProfileDrawer';
 import SearchBar from '../components/SearchBar';
+import finalLogo from '../assets/FinalLogo.jpg'
 import { FaSync, FaChevronLeft, FaChevronRight, FaFilter } from 'react-icons/fa';
 
 const useMobile = () => {
@@ -50,6 +51,11 @@ export default function Home() {
   const [scrollInterval, setScrollInterval] = useState(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const favoritesContainerRef = useRef(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [hasScrolledPastLogo, setHasScrolledPastLogo] = useState(false);
+  const [logoHeight, setLogoHeight] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [favoriteCountries, setFavoriteCountries] = useState([]);
   const observer = useRef();
   const itemsPerPage = 5;
 
@@ -119,10 +125,12 @@ export default function Home() {
     const initializeData = async () => {
       try {
         setLoading(true);
-        await fetchCountries();
+
         if (token) {
-          await loadFavorites();
+          await loadFavoriteCountries();
         }
+
+        await fetchCountries();
       } catch (err) {
         setError('Failed to load initial data');
       } finally {
@@ -136,9 +144,22 @@ export default function Home() {
   const handleRefreshFavorites = async () => {
     try {
       setFavoritesLoading(true);
-      await loadFavorites();
+      await loadFavoriteCountries();
     } catch (err) {
       console.error('Error refreshing favorites:', err);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  const loadFavoriteCountries = async () => {
+    try {
+      setFavoritesLoading(true);
+      const favoriteCountriesData = await getFavoriteCountries();
+      setFavoriteCountries(favoriteCountriesData);
+      await loadFavorites(); // Still call this to maintain the simple favorites list
+    } catch (err) {
+      console.error('Error loading favorite countries:', err);
     } finally {
       setFavoritesLoading(false);
     }
@@ -164,12 +185,76 @@ export default function Home() {
   };
 
   useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+  
+    const updateLogoState = () => {
+      const logoElement = document.getElementById('standalone-logo');
+      if (!logoElement) return;
+  
+      const scrollY = window.scrollY;
+      const logoRect = logoElement.getBoundingClientRect();
+      const appBarHeight = 64; // h-16 = 64px
+  
+      // Calculate the exact position where logo should attach/detach
+      const attachThreshold = logoHeight * 0.5;
+      const detachThreshold = logoHeight * 0.8;
+  
+      if (scrollY > lastScrollY) { // Scrolling down
+        if (logoRect.top <= appBarHeight + attachThreshold && !hasScrolledPastLogo) {
+          setHasScrolledPastLogo(true);
+        }
+      } else { // Scrolling up
+        if (scrollY <= detachThreshold && hasScrolledPastLogo) {
+          setHasScrolledPastLogo(false);
+        }
+      }
+  
+      lastScrollY = scrollY;
+      setScrolled(scrollY > 10);
+      ticking = false;
+    };
+  
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateLogoState);
+        ticking = true;
+      }
+    };
+  
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasScrolledPastLogo, logoHeight]);
+
+  useEffect(() => {
+    const logoElement = document.getElementById('standalone-logo');
+    if (!logoElement) return;
+  
+    const observer = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        setLogoHeight(entry.contentRect.height);
+        if (isInitialLoad) {
+          setIsInitialLoad(false);
+        }
+      }
+    });
+  
+    observer.observe(logoElement);
+    return () => observer.disconnect();
+  }, [isInitialLoad]);
+
+  useEffect(() => {
     return () => {
       if (scrollInterval) clearInterval(scrollInterval);
     };
   }, [scrollInterval]);
 
   const getFullCountryData = (fav) => {
+    // First check favoriteCountries (loaded immediately)
+    const fromFavorites = favoriteCountries.find(c => c.cca3 === fav.code);
+    if (fromFavorites) return fromFavorites;
+    
+    // Then check regular countries (might not be loaded yet)
     return countries.find(c => c.cca3 === fav.code);
   };
 
@@ -258,15 +343,64 @@ export default function Home() {
   }, [selectedKeyword, countries, resetSearch]);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden">
+    <div className="relative min-h-screen text-white overflow-hidden 
+       bg-gradient-to-br from-gray-900 via-gray-950 to-gray-800
+       md:from-gray-900 md:via-black md:to-gray-800">
       <style>{styles}</style>
+
+      {/* Fixed App Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-16 flex items-center justify-end px-6 z-30"
+        initial={{ backdropFilter: 'blur(0px)', backgroundColor: 'rgba(0, 0, 0, 0)' }}
+        animate={{
+          backdropFilter: scrolled ? 'blur(10px)' : 'blur(0px)',
+          backgroundColor: scrolled ? 'rgba(15, 23, 42, 0.7)' : 'rgba(0, 0, 0, 0)'
+        }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Logo in app bar */}
+        {hasScrolledPastLogo && (
+          <motion.div
+            key="appbar-logo"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="absolute pr-30"
+          >
+            <img src={finalLogo} alt="Logo" className="w-40" />
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Standalone Logo */}
+      <motion.div
+        id="standalone-logo"
+        key="standalone-logo"
+        initial={{ opacity: 1, y: 0 }}
+        animate={{
+          opacity: hasScrolledPastLogo ? 0 : 1,
+          y: hasScrolledPastLogo ? -logoHeight * 0.2 : 0
+        }}
+        transition={{ duration: 0.3 }}
+        style={{
+          position: 'fixed',
+          top: isMobile ? '0px' : '5px',
+          left: isMobile ? '50%' : '70%',
+          transform: 'translateX(-50%)',
+          zIndex: 20,
+          pointerEvents: hasScrolledPastLogo ? 'none' : 'auto'
+        }}
+      >
+        <img src={finalLogo} alt="Logo" className={isMobile ? 'w-35' : 'w-60'} />
+      </motion.div>
       
       {/* Mouse hover background effect - Desktop only */}
       {!isMobile && (
         <motion.div
           className="fixed inset-0 pointer-events-none z-0"
           style={{
-            background: `radial-gradient(1500px at ${mousePosition.x}px ${mousePosition.y}px, rgba(29, 78, 216, 0.2), transparent 98%)`,
+            background: `radial-gradient(1500px at ${mousePosition.x}px ${mousePosition.y}px, rgba(29, 78, 216, 0.3), transparent 98%)`,
           }}
           transition={{ type: 'spring', damping: 30 }}
         />
@@ -278,7 +412,7 @@ export default function Home() {
       {/* Desktop Filter Sidebar */}
       {!isMobile && (
         <div 
-          className="fixed left-0 top-0 h-full w-56 pt-15 pb-4 px-4 bg-gray-800/50 backdrop-blur-sm border-r border-gray-700/50 overflow-y-auto z-10"
+          className="fixed left-0 top-0 h-full w-56 pt-15 pb-4 px-4 bg-gray-800/50 backdrop-blur-sm border-r border-gray-700/50 overflow-y-auto z-50"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -344,17 +478,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6">
           {/* Mobile Header */}
           {isMobile && (
-            <div className="flex justify-between items-center mb-4 px-2">
-              <h1 className="text-2xl font-light font-serif text-gray-100">
-                Browse Countries
-              </h1>
-              <button
-                onClick={() => setShowMobileFilters(!showMobileFilters)}
-                className="p-2 rounded-lg bg-gray-700/50 text-gray-300"
-              >
-                <FaFilter />
-              </button>
-            </div>
+            <h1 className="text-lg pt-12 font-light font-serif text-gray-100 mb-1 px-2">  {/* Changed from text-2xl to text-xl */}
+              Browse Countries
+            </h1>
           )}
 
           {/* Mobile Filter Chips */}
@@ -478,7 +604,7 @@ export default function Home() {
                     )}
                     <div 
                       ref={favoritesContainerRef}
-                      className="favorites-scroll-container overflow-x-auto pb-4"
+                      className="favorites-scroll-container overflow-x-auto pb-4 pt-1"
                     >
                       <div className="flex space-x-6" style={{ minWidth: 'max-content' }}>
                         {favorites.map(fav => {
@@ -489,14 +615,19 @@ export default function Home() {
                               <CountryCard
                                 country={fullData}
                                 onClick={() => setSelectedCountry(fullData)}
-                                isFavorite={true}
+                                isFavorite={true} // Always true since these are favorites
                               />
                             </div>
                           );
                         })}
                       </div>
                     </div>
-                    <div className="h-[5px] bg-gray-700/50 w-full rounded-ful"></div>
+                    <div className={`relative left-0 right-0 mx-auto h-[5px] ${
+                      isMobile ? 'bg-gradient-to-r from-gray-500 via-gray-400 to-gray-500' : 
+                      'bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600'
+                    } opacity-30 rounded-full ${
+                      isMobile ? 'w-full max-w-[280px]' : 'w-220'
+                    }`}></div>
                   </div>
                 ) : (
                   <div className="text-gray-400">

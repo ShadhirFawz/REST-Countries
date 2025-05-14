@@ -1,40 +1,41 @@
-// src/context/FavoritesContext.jsx
+// src/context/FavoriteContext.js
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getFavoriteCountries } from '../services/api';
 import { useAuth } from './AuthContext';
-import { getFavorites } from '../services/api';
 
-const FavoritesContext = createContext();
+const FavoriteContext = createContext();
 
-export function FavoritesProvider({ children }) {
-  const { token } = useAuth();
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(false);
+export const FavoriteProvider = ({ children }) => {
+  const { token, favoritesLoading } = useAuth(); // Use AuthContext's loading state
+  const [favoriteCountries, setFavoriteCountries] = useState([]);
+  const [error, setError] = useState(null);
 
-  const refreshFavorites = async () => {
+  const loadFavoriteCountries = async () => {
     if (!token) return;
     
-    setLoading(true);
     try {
-      const favs = await getFavorites();
-      setFavorites(favs);
+      setError(null);
+      const data = await getFavoriteCountries();
+      setFavoriteCountries(data);
     } catch (err) {
-      console.error('Error fetching favorites:', err);
-    } finally {
-      setLoading(false);
+      setError(err.message);
     }
   };
 
   useEffect(() => {
-    refreshFavorites();
+    loadFavoriteCountries();
   }, [token]);
 
   return (
-    <FavoritesContext.Provider value={{ favorites, loading, refreshFavorites }}>
+    <FavoriteContext.Provider value={{ 
+      favoriteCountries, 
+      loading: favoritesLoading, // Use the same loading state
+      error,
+      refreshFavorites: loadFavoriteCountries 
+    }}>
       {children}
-    </FavoritesContext.Provider>
+    </FavoriteContext.Provider>
   );
-}
+};
 
-export function useFavorites() {
-  return useContext(FavoritesContext);
-}
+export const useFavorites = () => useContext(FavoriteContext);
