@@ -69,7 +69,7 @@ export default function ProfileDrawer() {
     <div className={`relative bg-gray-800/90 backdrop-blur-sm h-full flex rounded-bl-2xl rounded-tl-2xl transition-all duration-300 ${
       isOpen 
         ? isMobile ? 'w-64' : 'w-64' 
-        : isMobile ? 'w-10' : 'w-20'
+        : isMobile ? 'w-5' : 'w-20'
     }`}>
       {/* Toggle Icon */}
       <div

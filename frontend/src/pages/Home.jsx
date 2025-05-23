@@ -184,6 +184,25 @@ export default function Home() {
     }
   };
 
+  const handleKeywordClick = (kw) => {
+    const newKeyword = selectedKeyword === kw ? null : kw;
+    setSelectedKeyword(newKeyword);
+    
+    // Reset pagination and clear countries when filter is removed
+    if (!newKeyword) {
+      setPage(1);
+      setHasMore(true);
+      setCountries([]);
+      setSearchMode(false);
+    } else {
+      // For new filter, reset and load fresh
+      setPage(1);
+      setHasMore(true);
+      setCountries([]);
+      setSearchMode(true);
+    }
+  };
+
   useEffect(() => {
     let lastScrollY = window.scrollY;
     let ticking = false;
@@ -249,6 +268,19 @@ export default function Home() {
     };
   }, [scrollInterval]);
 
+  useEffect(() => {
+    const resetAndFetch = async () => {
+      setCountries([]);
+      setPage(1);
+      setHasMore(true);
+      await fetchCountries();
+    };
+
+    if (selectedKeyword) {
+      resetAndFetch();
+    }
+  }, [selectedKeyword]);
+
   const getFullCountryData = (fav) => {
     // First check favoriteCountries (loaded immediately)
     const fromFavorites = favoriteCountries.find(c => c.cca3 === fav.code);
@@ -283,12 +315,13 @@ export default function Home() {
   };
 
   const fetchCountries = useCallback(async () => {
-    if (loading || !hasMore || searchMode) return;
-    
+    if (loading || !hasMore) return;
+
     setLoading(true);
     try {
-      const paginatedData = await getAllCountries(page, itemsPerPage);
-      
+      const query = selectedKeyword || '';
+      const paginatedData = await getAllCountries(page, itemsPerPage, query); // ✅ send query
+
       setCountries(prev => {
         const existingCodes = new Set(prev.map(c => c.cca3));
         const newCountries = paginatedData.filter(
@@ -296,7 +329,7 @@ export default function Home() {
         );
         return [...prev, ...newCountries];
       });
-      
+
       setHasMore(paginatedData.length === itemsPerPage);
       setPage(prev => prev + 1);
     } catch (err) {
@@ -304,7 +337,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [page, loading, hasMore, searchMode]);
+  }, [page, loading, hasMore, selectedKeyword]);
 
   const resetSearch = useCallback(() => {
     setSearchMode(false);
@@ -432,10 +465,7 @@ export default function Home() {
                           ? 'bg-blue-500 border-blue-500' 
                           : 'border-gray-500 group-hover:border-blue-400'
                       }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedKeyword(selectedKeyword === kw ? null : kw);
-                      }}
+                      onClick={() => handleKeywordClick(kw)}
                     >
                       {selectedKeyword === kw && (
                         <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -445,10 +475,7 @@ export default function Home() {
                     </div>
                     <span 
                       className="text-sm text-gray-300 group-hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedKeyword(selectedKeyword === kw ? null : kw);
-                      }}
+                      onClick={() => handleKeywordClick(kw)}
                     >
                       {kw}
                     </span>
@@ -464,6 +491,7 @@ export default function Home() {
               onClick={() => {
                 setSelectedKeyword(null);
                 resetSearch();
+                handleKeywordClick(selectedKeyword);
               }}
               className="w-full mt-2 px-3 py-2 text-sm bg-gray-700/50 hover:bg-gray-700 rounded-md text-gray-300 transition-colors"
             >
@@ -513,7 +541,7 @@ export default function Home() {
           )}
 
           <div className={`${isMobile ? 'px-2' : ''}`}>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4 mt-6">
               {!isMobile && (
                 <h1 className="text-3xl font-light font-serif text-gray-100">
                   Browse Countries
@@ -522,7 +550,7 @@ export default function Home() {
               {searchMode && (
                 <button
                   onClick={resetSearch}
-                  className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded-md text-gray-300 transition-colors"
+                  className="relative px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded-md text-gray-300 transition-colors"
                 >
                   Show All Countries
                 </button>
@@ -602,26 +630,33 @@ export default function Home() {
                         </motion.div>
                       </div>
                     )}
+
+                    {/* Favorites Container - Different sizing for mobile */}
                     <div 
                       ref={favoritesContainerRef}
                       className="favorites-scroll-container overflow-x-auto pb-4 pt-1"
                     >
-                      <div className="flex space-x-6" style={{ minWidth: 'max-content' }}>
+                      <div className={`flex ${isMobile ? 'space-x-4' : 'space-x-6'}`} style={{ minWidth: 'max-content' }}>
                         {favorites.map(fav => {
                           const fullData = getFullCountryData(fav);
                           if (!fullData) return null;
                           return (
-                            <div key={fav.code} className="flex-shrink-0 w-64 relative">
+                            <div 
+                              key={fav.code} 
+                              className={`flex-shrink-0 ${isMobile ? 'w-40' : 'w-64'} relative`}
+                            >
                               <CountryCard
                                 country={fullData}
                                 onClick={() => setSelectedCountry(fullData)}
-                                isFavorite={true} // Always true since these are favorites
+                                isFavorite={true}
                               />
                             </div>
                           );
                         })}
                       </div>
                     </div>
+
+                    {/* Scroll indicator line - Different sizing for mobile */}
                     <div className={`relative left-0 right-0 mx-auto h-[5px] ${
                       isMobile ? 'bg-gradient-to-r from-gray-500 via-gray-400 to-gray-500' : 
                       'bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600'
@@ -644,7 +679,9 @@ export default function Home() {
             )}
 
             {/* Country Grid */}
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
+            <div className={`grid ${
+              isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+            }`}>
               {filteredCountries.map((country, index) => (
                 <motion.div 
                   key={`${country.cca3}-${index}`}

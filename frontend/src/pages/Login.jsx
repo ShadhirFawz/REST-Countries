@@ -5,8 +5,7 @@ import { EyeIcon, EyeSlashIcon, GlobeAltIcon } from '@heroicons/react/24/outline
 import loginImage from '../assets/Login_img.jpg';
 import backgroundImage from '../assets/Login_bg.jpg';
 import FinalLogo from '../assets/FinalLogo.jpg'
-import appLogo from '../assets/AppLogo.jpg'
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 
 export default function Login() {
   const { login } = useAuth();
@@ -17,6 +16,12 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
+  const controls = useAnimation();
+  const [animationPhase, setAnimationPhase] = useState('initial');
+  const loginImageControls = useAnimation();
+  const finalLogoControls = useAnimation();
+
+
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -29,6 +34,40 @@ export default function Login() {
       window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
+
+  useEffect(() => {
+    const runAnimations = async () => {
+      // Initial animations
+      setAnimationPhase('initial');
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait for initial animations
+      
+      // Continuous loop
+      while (true) {
+        setAnimationPhase('looping');
+        await loginImageControls.start({ 
+          rotate: 360,
+          transition: { duration: 1.5, ease: "easeInOut" }
+        });
+        await finalLogoControls.start({
+          x: -200,
+          opacity: 0,
+          transition: { duration: 0.5 }
+        });
+        await loginImageControls.start({ 
+          rotate: 0,
+          transition: { duration: 0 } // Instant reset
+        });
+        await finalLogoControls.start({
+          x: 0,
+          opacity: 1,
+          transition: { duration: 1, ease: "easeOut" }
+        });
+        await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second gap
+      }
+    };
+    runAnimations();
+  }, []);
+
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -50,7 +89,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center md:justify-start bg-gradient-to-br from-gray-900 via-black to-gray-800 p-4 sm:p-5">
+    <div className="relative flex min-h-screen items-center justify-center md:justify-start bg-gradient-to-br from-gray-900 via-black to-gray-800 p-4 sm:p-5 overflow-hidden">
 
       <div className="lg:hidden absolute top-0 w-full">
         {/* Background logo - visible on both mobile and desktop */}
@@ -64,8 +103,18 @@ export default function Login() {
           </div>
         </div>
         
-        {/* Foreground app logo - mobile version */}
-        <div className="lg:hidden absolute top-10 w-full flex justify-center z-50">
+        {/* Foreground app logo - mobile version with animation */}
+        <motion.div 
+          className="lg:hidden absolute top-10 w-full flex justify-center z-50"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ 
+            type: "spring",
+            damping: 40,
+            stiffness: 100,
+            duration: 2
+          }}
+        >
           <div className="w-50 h-30 overflow-hidden border-none">
             <img 
               src={FinalLogo}
@@ -73,7 +122,7 @@ export default function Login() {
               className="w-full h-full object-cover"
             />
           </div>
-        </div>
+        </motion.div>
       </div>      
 
       <motion.div
@@ -104,38 +153,66 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Image Container - Hidden on mobile */}
-      
-        <div className="rounded-2xl overflow-x-auto border-none opacity-80 w-2/4 mt-0 max-w-2xl ml-10 mr-20 hidden lg:block">
-          <img 
-            src={loginImage}
-            alt="Login visual" 
-            className="w-full h-full"
-          />
-        </div>
-      
+      {/* Image Container - Hidden on mobile with rotation animation */}
+      <motion.div 
+        className="rounded-2xl overflow-hidden border-none opacity-80 w-2/4 mt-0 max-w-2xl ml-10 mr-20 hidden lg:block"
+        style={{
+          perspective: "1000px", // Add 3D perspective
+          transformStyle: "preserve-3d"
+        }}
+        initial={{ rotate: 0 }}
+        animate={animationPhase === 'initial' ? { rotate: 360 } : loginImageControls}
+        transition={
+          animationPhase === 'initial' ? {
+            duration: 1.5,
+            ease: "easeInOut",
+            type: "spring",
+            damping: 40
+          } : undefined
+        }
+      >
+        <img 
+          src={loginImage}
+          alt="Login visual" 
+          className="w-full h-full"
+          style={{
+            backfaceVisibility: "hidden" // Prevent flickering during rotation
+          }}
+        />
+      </motion.div>
 
-      <div className="absolute w-2/4 mt-0 mb-40 max-w-md ml-100 z-50 mr-20 hidden lg:block">
+      {/*Modify your FinalLogo component:*/}
+      <motion.div 
+        className="absolute w-2/4 mt-0 mb-40 max-w-md ml-100 z-50 mr-20 hidden lg:block"
+        initial={{ x: -200, opacity: 0 }}
+        animate={animationPhase === 'initial' ? { x: 0, opacity: 1 } : finalLogoControls}
+        transition={
+          animationPhase === 'initial' ? {
+            duration: 1,
+            ease: "easeOut",
+            delay: 0.5
+          } : undefined
+        }
+      >
         <div className="rounded-2xl mt-0 z-0 overflow-hidden transform-none pointer-events-none opacity-100">
           <img 
-            src={appLogo}
+            src={FinalLogo}
             alt="App Logo visual" 
             className="w-800 h-full object-cover"
           />
         </div>
-      </div>
-
-      <div className="absolute w-2/4 mt-5 mb-26 max-w-md items-center ml-148 mr-20 hidden lg:block">
-        <div className="h-[7px] rounded-full bg-pink-500 w-50 opacity-65 z-150"></div>
-      </div>
-
-      <div className="absolute w-2/4 mt-5 mb-22 max-w-md items-center ml-160 mr-20 hidden lg:block">
-        <div className="h-[7px] rounded-full bg-blue-900 w-50 opacity-65 z-150"></div>
-      </div>
-
+      </motion.div>
       
       {/* Form Container - Responsive adjustments */}
-      <div className="relative z-10 w-full max-w-md md:left-20 md:mt-6 md:transform md:translate-y-[-2%]">
+      <motion.div 
+        className="relative z-10 w-full max-w-md md:left-20 md:mt-6 md:transform md:translate-y-[-2%]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          delay: 0.7,
+          duration: 1.5
+        }}
+      >
         {/* Header */}
         <div className="mb-6 sm:mb-7 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-100 font-serif">
@@ -143,10 +220,23 @@ export default function Login() {
           </h2>
           <p className="mt-2 sm:mt-3 text-gray-400 flex items-center justify-center">
             Get ready to  {' '}
-            <span 
-              className="font-light pl-1 text-blue-400 transition-colors cursor-default flex items-center"
-            >
-              Browse the World <GlobeAltIcon className="h-5 w-5 ml-1 text-gray-400 inline-block" />
+            <span className="font-light pl-1 text-blue-400 transition-colors cursor-default flex items-center">
+              Browse the World{' '}
+              <motion.span
+                className="inline-flex items-center justify-center h-5 w-5 ml-1"  // Fixed square container
+                animate={{ rotate: 360 }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 4,
+                  ease: "linear",
+                  repeatDelay: 2
+                }}
+                style={{
+                  transformOrigin: 'center center'  // Explicit center rotation
+                }}
+              >
+                <GlobeAltIcon className="h-5 w-5 text-gray-400" />
+              </motion.span>
             </span>
           </p>
         </div>
@@ -270,7 +360,7 @@ export default function Login() {
             </Link>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

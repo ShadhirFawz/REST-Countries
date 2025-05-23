@@ -3,9 +3,15 @@ import axios from 'axios';
 
 const API_BASE = '/api/countries';
 
-export const getAllCountries = async (page = 1, limit = 5) => {
+export const getAllCountries = async (page = 1, limit = 5, keyword = '') => {
   try {
-    const response = await axios.get(`/api/countries/all?page=${page}&limit=${limit}`);
+    const response = await axios.get(`/api/countries/all`, {
+      params: {
+        page,
+        limit,
+        keyword, // ✅ send selectedKeyword as query param
+      },
+    });
     return response.data;
   } catch (err) {
     console.error('Error fetching countries:', err);

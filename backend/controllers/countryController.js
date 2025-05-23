@@ -11,17 +11,42 @@ export const getAllCountries = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
-    
+    const keyword = req.query.keyword?.toLowerCase().trim() || '';
+
+    // Fetch all independent countries
     const response = await axios.get(`https://restcountries.com/v3.1/independent?status=true`);
+    let countries = response.data;
+
+    // 🔍 Filter based on region, subregion, or language (if keyword is provided)
+    if (keyword) {
+      countries = countries.filter((country) => {
+        const region = country.region?.toLowerCase() || '';
+        const subregion = country.subregion?.toLowerCase() || '';
+        const languages = Object.values(country.languages || {}).map((lang) =>
+          lang.toLowerCase()
+        );
+
+        // 🔁 Match region/subregion fully and languages exactly
+        return (
+          region === keyword ||
+          subregion === keyword ||
+          languages.includes(keyword)
+        );
+      });
+    }
+
+    // 📄 Paginate AFTER filtering
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    const paginatedData = response.data.slice(startIndex, endIndex);
-    
+    const paginatedData = countries.slice(startIndex, endIndex);
+
     res.status(200).json(paginatedData);
   } catch (error) {
+    console.error("Country fetch error:", error.message);
     res.status(500).json({ message: 'Error fetching all countries', error: error.message });
   }
 };
+
 
 /**
  * @desc   Get country by name

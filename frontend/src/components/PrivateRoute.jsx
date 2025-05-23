@@ -1,9 +1,21 @@
 // src/components/PrivateRoute.jsx
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react';
 
 export default function PrivateRoute({ children }) {
   const { user, authLoading } = useAuth();
+  const [dots, setDots] = useState('');
+
+  useEffect(() => {
+    if (!authLoading) return;
+    
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500); // Adjust speed as needed (500ms = 0.5s per dot)
+    
+    return () => clearInterval(interval);
+  }, [authLoading]);
 
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-950 to-gray-800 md:from-gray-900 md:via-black md:to-gray-800">
@@ -31,15 +43,20 @@ export default function PrivateRoute({ children }) {
           ))}
         </div>
         
-        {/* Text */}
-        <p className="mt-6 text-gray-300 font-medium">Authenticating...</p>
+        {/* Text with animated dots */}
+        <p className="mt-6 text-gray-300 font-medium">Authenticating<span>{dots}</span></p>
       </div>
       
-      {/* Add the animation keyframes to your global CSS */}
-      <style jsx global>{`
+      {/* Animation styles */}
+      <style>{`
         @keyframes bounce {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
+        }
+        span {
+          display: inline-block;
+          width: 1.5em;
+          text-align: left;
         }
       `}</style>
     </div>

@@ -179,7 +179,11 @@ export default function CountryModal({ country, onClose }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50"
     >
       {/* Close Button */}
-      <AnimatedCloseButton onClick={handleClose} />
+      <motion.div
+        className={`absolute ${isMobile ? 'top-20 right-5 z-50' : 'top-2 right-115'}`}
+      >
+        <AnimatedCloseButton onClick={handleClose} />
+      </motion.div>
 
       {/* Favorite Button */}
       <motion.button
@@ -364,7 +368,9 @@ export default function CountryModal({ country, onClose }) {
           </div>
 
           {/* Footer with Map Links */}
-          <div className="mt-4 pt-3 border-t border-gray-700/50 flex justify-center gap-2">
+          <div className={`mt-4 pt-3 border-t border-gray-700/50 flex justify-center ${
+            isMobile ? 'gap-1.5' : 'gap-2'
+          }`}>
             <MapLink 
               href={country.maps?.googleMaps} 
               text="Google Maps"
@@ -435,9 +441,19 @@ const MapLink = ({ href, text, isMobile }) => (
     href={href} 
     target="_blank" 
     rel="noopener noreferrer"
-    className={`${isMobile ? 'px-2 py-1.5 text-2xs' : 'px-3 py-2 text-xs'} bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-md flex items-center gap-1 transition-colors`}
+    className={`${
+      isMobile ? 
+        'px-2.5 py-1 text-xs' : 
+        'px-3 py-2 text-xs'
+    } bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-md flex items-center gap-1 transition-colors border ${
+      isMobile ? 
+        'border-blue-400/30' : 
+        'border-blue-400/20'
+    }`}
   >
-    <FaMapMarkerAlt className={`${isMobile ? 'text-2xs' : 'text-xs'}`} />
-    {text}
+    <FaMapMarkerAlt className={isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+    <span className={isMobile ? 'text-xs' : ''}>
+      {text}
+    </span>
   </a>
 );
