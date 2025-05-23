@@ -4,7 +4,7 @@ import axios from 'axios';
 import { getFavorites } from '../services/api';
 
 // Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:5000'; // Or your backend base URL
+axios.defaults.baseURL = 'https://eerie-kirstyn-shadhirfawz-b4b81ffd.koyeb.app'; // Or your backend base URL
 
 // Add token to all requests if available
 axios.interceptors.request.use(config => {
