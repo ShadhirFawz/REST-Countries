@@ -2,6 +2,17 @@
 
 This RESTCountries API to fetch all the country related information to showcase them in a more structured and categorized format, where the site support search functionality, comprehensive keyword searches, add to favourites,  save important information as an image. In order to support multiple users and handle thier favorite personally an authentication with protected login and registration is implemented to give an increased user experience.
 
+<p align='center'>
+ <img src="https://github.com/ShadhirFawz/REST-Countries/blob/main/Assets/CSpaceImg.jpg" alt="Screenshot 1" width="300" />
+</p>
+
+<p align='center'>
+  <img src="https://github.com/ShadhirFawz/REST-Countries/blob/main/Assets/Screenshot%202025-10-18%20131505.png" alt="Screenshot 2" width="500" />
+  <img src="https://github.com/ShadhirFawz/REST-Countries/blob/main/Assets/Screenshot%202025-10-18%20131643.png" alt="Screenshot 3" width="500" />
+  <img src="https://github.com/ShadhirFawz/REST-Countries/blob/main/Assets/Screenshot%202025-10-18%20131700.png" alt="Screenshot 4" width="500" />
+  <img src="https://github.com/ShadhirFawz/REST-Countries/blob/main/Assets/Screenshot%202025-10-18%20131715.png" alt="Screenshot 5" width="500" />
+</p>
+
 
 ## Setup Instructions
 
