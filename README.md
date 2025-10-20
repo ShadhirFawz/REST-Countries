@@ -1,4 +1,4 @@
-# REST Countries API Documentation
+ # 🚀 CSpace - REST Countries API
 
 This RESTCountries API to fetch all the country related information to showcase them in a more structured and categorized format, where the site support search functionality, comprehensive keyword searches, add to favourites,  save important information as an image. In order to support multiple users and handle thier favorite personally an authentication with protected login and registration is implemented to give an increased user experience.
 
@@ -14,7 +14,7 @@ This RESTCountries API to fetch all the country related information to showcase 
 </p>
 
 
-## Setup Instructions
+## ✅ Setup Instructions
 
 ### **1. Get the repository**
 ```sh
@@ -63,7 +63,7 @@ npm run dev
 
  ## 🚀 Libraries used 🚀
 
- - 📱 [React0Icons/Fa](https://www.mongodb.com/)
+ - 📱 [React Icons](https://www.mongodb.com/)
  - 📱 [Framer Motion](https://expressjs.com/)
  - 📱 [HeroIcons](https://react.dev/)
 
